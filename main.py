@@ -1,109 +1,106 @@
 import random
-class box():
-    """A box class for A* Pathfinding"""
-
-    def __init__(self, parent=None, position=None):
-        self.parent = parent
-        self.position = position
+class quadrado():
+    def __init__(self, pai=None, posicao=None):
+        self.pai = pai
+        self.posicao = posicao
 
         self.g = 0
         self.h = 0
         self.f = 0
 
     def __eq__(self, other):
-        return self.position == other.position
+        return self.posicao == other.posicao
 
 
-def astar(maze, start, end):
-    """Returns a list of tuples as a path from the given start to the given end in the given board"""
+def a_estrela(terreno, inicio, fim):
 
-    # Create start and end node
-    start_node = box(None, start)
-    start_node.g = start_node.h = start_node.f = 0
-    end_node = box(None, end)
-    end_node.g = end_node.h = end_node.f = 0
+    # Cria o nó de início e de fim
+    inicio_do_no = quadrado(None, inicio)
+    inicio_do_no.g = inicio_do_no.h = inicio_do_no.f = 0
+    fim_do_no = quadrado(None, fim)
+    fim_do_no.g = fim_do_no.h = fim_do_no.f = 0
 
-    # Initialize both open and closed list
-    open_list = []
-    closed_list = []
+    # Inicializa a lista aberta e a lista fechada
+    lista_aberta = []
+    lista_fechada = []
 
-    # Add the start node
-    open_list.append(start_node)
+    # Adiciona o nó inicial
+    lista_aberta.append(inicio_do_no)
 
-    # Loop until you find the end
-    while len(open_list) > 0:
+    # Entra em loop até encontrar o fim (terminar a lista aberta)
+    while len(lista_aberta) > 0:
 
-        # Get the current node
-        current_node = open_list[0]
-        current_index = 0
-        for index, item in enumerate(open_list):
-            if item.f < current_node.f:
-                current_node = item
-                current_index = index
+        # Pega o nó atual
+        no_atual = lista_aberta[0]
+        atual_index = 0
+        for index, item in enumerate(lista_aberta):
+            if item.f < no_atual.f:
+                no_atual = item
+                atual_index = index
 
-        # Pop current off open list, add to closed list
-        open_list.pop(current_index)
-        closed_list.append(current_node)
+        # Retira o nó atual da lista aberta e adiciona na lista fechada
+        lista_aberta.pop(atual_index)
+        lista_fechada.append(no_atual)
 
-        # Found the goal
-        if current_node == end_node:
-            path = []
-            current = current_node
-            while current is not None:
-                path.append(current.position)
-                current = current.parent
-            return path[::-1] # Return reversed path
+        # Encontra o objetivo
+        if no_atual == fim_do_no:
+            caminho = []
+            atual = no_atual
+            while atual is not None:
+                caminho.append(atual.posicao)
+                atual = atual.pai
+            return caminho[::-1] # Return reversed caminho
 
-        # Generate children
+        # Gera os filhos (children)
         children = []
-        for new_position in [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (-1, 1), (1, -1), (1, 1)]: # Adjacent squares
+        # Quadrados adjacentes (laterais e diagonais)
+        for nova_posicao in [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (-1, 1), (1, -1), (1, 1)]: 
+            # Pega a posição dos nós
+            posicao_do_no = (no_atual.posicao[0] + nova_posicao[0], no_atual.posicao[1] + nova_posicao[1])
 
-            # Get node position
-            node_position = (current_node.position[0] + new_position[0], current_node.position[1] + new_position[1])
-
-            # Make sure within range
-            if node_position[0] > (len(maze) - 1) or node_position[0] < 0 or node_position[1] > (len(maze[len(maze)-1]) -1) or node_position[1] < 0:
+            # Verifica se está no alcance do mapa
+            if posicao_do_no[0] > (len(terreno) - 1) or posicao_do_no[0] < 0 or posicao_do_no[1] > (len(terreno[len(terreno)-1]) -1) or posicao_do_no[1] < 0:
                 continue
 
-            # Make sure walkable terrain
-            if maze[node_position[0]][node_position[1]] == 999:
+            # Verifica se é possível percorrer o caminho
+            if terreno[posicao_do_no[0]][posicao_do_no[1]] == 999:
                 continue
 
-            # Create new node
-            new_node = box(current_node, node_position)
+            # Cria um novo nó
+            novo_no = quadrado(no_atual, posicao_do_no)
 
-            # Append
-            children.append(new_node)
+            # Adiciona o novo nó
+            children.append(novo_no)
 
-        # Loop through children
+        # Abre um looping percorrendo os filhos (children)
         for child in children:
 
-            # Child is on the closed list
-            for closed_child in closed_list:
+            # Verifica se o filho está na lista fechada
+            for closed_child in lista_fechada:
                 if child == closed_child:
                     continue
 
-            # Create the f, g, and h values
-            child.g = current_node.g + 1
-            child.h = ((child.position[0] - end_node.position[0]) ** 2) + ((child.position[1] - end_node.position[1]) ** 2)
+            # Cria os valores de f, g e h 
+            # G = distancia nó atual e nó inicial
+            # H = distancia estimada do nó atual e nó final
+            # F = custo total
+            child.g = no_atual.g + mapa[no_atual.posicao[0]][no_atual.posicao[1]]
+            child.h = ((fim_do_no.posicao[0] - child.posicao[0])) + ((fim_do_no.posicao[1] - child.posicao[1]))
             child.f = child.g + child.h
-
-            # Child is already in the open list
-            for open_node in open_list:
-                if child == open_node and child.g > open_node.g:
+            
+            # Verifica se o filho já está na lista aberta
+            for no_aberto in lista_aberta:
+                if child == no_aberto and child.g > no_aberto.g:
                     continue
 
-            # Add the child to the open list
-            open_list.append(child)
+            # Caso o filho não esteja na lista aberta, adiciona o filho à ela
+            lista_aberta.append(child)
 
 
-
-    ## CÓDIGO NOVO ###
 listaNum = [1,3,6,999] #terrenos do mapa
 
 l = 5 #variavel da quantidade de linhas do mapa
 c = 5 #variavel da quantidade de colunas do mapa
-maxBlock = 0 #variavel de limite de terrenos de bloqueio
 
 #criando a matriz do mapa
 linha = [0] * (c+2)
@@ -119,8 +116,8 @@ for i in range(1,l+1):
     for j in range(1,c+1):
         mapa[i][j] = random.choice(listaNum)
 
-mapa[1][1] = 1000 #definindo ponto inicial com valor 1000
-mapa[l][c] = -1 #definindo ponto final com valor -1
+mapa[1][1] = 0 #definindo ponto inicial com valor 0
+mapa[l][c] = 0 #definindo ponto final com valor 0
 
 #funcao que mostra na tela o mapa
 def mostraMapa():
@@ -128,22 +125,16 @@ def mostraMapa():
         for j in range(0,c+2):
             print(f'[{mapa[i][j]:^5}]', end='')
         print()
+    print('\n')
 
 def main():
     mostraMapa()
-    board = [[0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0]]
+    inicio = (1, 1)
+    fim = (l, c)
 
-    start = (1, 1)
-    end = (l, c)
-
-    path = astar(mapa, start, end)
-    print(path)
+    caminho = a_estrela(mapa, inicio, fim)
+    print(caminho)
+    print()
 
 
 if __name__ == '__main__':
